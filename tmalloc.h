@@ -18,7 +18,7 @@
 
 
 #include <stddef.h>
-
+#include <string.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,6 +38,8 @@ typedef struct tmalloc {
 void*
 tmalloc_reserve (size_t size);
 
+void*
+tmalloc_reserve_z (size_t n, size_t size);
 
 /* =============================================================================
  * tmalloc_release

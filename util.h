@@ -24,7 +24,7 @@ extern "C" {
 #define DIM(A)                          (sizeof(A)/sizeof((A)[0]))
 #define UNS(a)                          ((uintptr_t)(a))
 #define ASSERT(x)                       /* assert(x) */
-#define CTASSERT(x)                     ({ int a[1-(2*!(x))]; a[0] = 0;})
+#define CTASSERT(x)                     static_assert(x) /*({ int a[1-(2*!(x))]; a[0] = 0; })*/
 
 
 /*

@@ -56,6 +56,24 @@ tmalloc_reserve (size_t size)
     return dataPtr;
 }
 
+void*
+tmalloc_reserve_z (size_t n, size_t size)
+{
+    void* blockPtr = malloc(sizeof(tmalloc_info_t) + size * n);
+
+    if (!blockPtr) {
+        return NULL;
+    }
+
+    memset(blockPtr, 0, sizeof(tmalloc_info_t) + size);
+
+    tmalloc_info_t* infoPtr = BLK2INFO(blockPtr);
+    infoPtr->size = size;
+
+    void* dataPtr = BLK2DATA(blockPtr);
+
+    return dataPtr;
+}
 
 /* =============================================================================
  * tmalloc_reserveAgain
