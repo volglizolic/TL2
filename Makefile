@@ -9,7 +9,7 @@
 # Variables
 # ==============================================================================
 
-CC      := gcc
+CC      := riscv64-unknown-linux-gnu-gcc
 CFLAGS  := -g -Wall -Winline -O3
 #CFLAGS  += -m32
 #CFLAGS  += -DTL2_OPTIM_HASHLOG
