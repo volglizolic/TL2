@@ -14,7 +14,7 @@ CFLAGS  := -g -Wall -Winline -O3
 #CFLAGS  += -m32
 #CFLAGS  += -DTL2_OPTIM_HASHLOG
 #CFLAGS  += -DTL2_RESIZE_HASHLOG
-LD      := gcc
+LD      := riscv64-unknown-linux-gnu-gcc
 
 LIBTL2 := libtl2.a
 
