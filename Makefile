@@ -10,6 +10,7 @@
 # ==============================================================================
 
 CFLAGS  := -g -Wall -Winline -O3
+CFLAGS += -static
 #CFLAGS  += -m32
 #CFLAGS  += -DTL2_OPTIM_HASHLOG
 #CFLAGS  += -DTL2_RESIZE_HASHLOG
