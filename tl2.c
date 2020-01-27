@@ -639,7 +639,7 @@ FreeList (Log* k, long sz)
     }
 
     /* Free continguous beginning */
-    free(k->List);
+//    free(k->List);
 }
 
 
