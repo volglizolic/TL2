@@ -266,9 +266,10 @@ TSRandom (Thread* Self)
 __INLINE__ intptr_t
 AtomicAdd (volatile intptr_t* addr, intptr_t dx)
 {
-    intptr_t v;
-    for (v = *addr; CAS(addr, v, v+dx) != v; v = *addr) {}
-    return (v+dx);
+    return atomic_fetch_add(addr, dx);
+//    intptr_t v;
+//    for (v = *addr; CAS(addr, v, v+dx) != v; v = *addr) {}
+//    return (v+dx);
 }
 
 
@@ -279,9 +280,10 @@ AtomicAdd (volatile intptr_t* addr, intptr_t dx)
 __INLINE__ intptr_t
 AtomicIncrement (volatile intptr_t* addr)
 {
-    intptr_t v;
-    for (v = *addr; CAS(addr, v, v+1) != v; v = *addr) {}
-    return (v+1);
+    return atomic_fetch_add(addr, 1);
+//    intptr_t v;
+//    for (v = *addr; CAS(addr, v, v+1) != v; v = *addr) {}
+//    return (v+1);
 }
 
 
@@ -602,7 +604,7 @@ MakeList (long sz, Thread* Self)
 {
     AVPair* ap = (AVPair*) malloc((sizeof(*ap) * sz) + TL2_CACHE_LINE_SIZE);
     assert(ap);
-    memset(ap, 0, sizeof(*ap) * sz);
+    memset(ap, 0, sizeof(*ap) * sz + TL2_CACHE_LINE_SIZE);
     AVPair* List = ap;
     AVPair* Tail = NULL;
     long i;
@@ -614,7 +616,6 @@ MakeList (long sz, Thread* Self)
         e->Ordinal = i;
         Tail = e;
     }
-    Tail->Next = NULL;
 
     return List;
 }
@@ -676,7 +677,8 @@ MakeHashLog (HashLog* hlPtr, long numLog, long numEntryPerLog, Thread* Self)
 {
     hlPtr->numEntry = 0;
     hlPtr->numLog = numLog;
-    hlPtr->logs = (Log*)calloc(numLog, sizeof(Log));
+    hlPtr->logs = (Log*)malloc(numLog * sizeof(Log));
+    memset(hlPtr->logs, 0, numLog * sizeof(Log));
     long i;
     for (i = 0; i < numLog; i++) {
         hlPtr->logs[i].List = MakeList(numEntryPerLog, Self);
@@ -717,7 +719,8 @@ ResizeHashLog (HashLog* hlPtr, Thread* Self)
     Log* log;
 
     /* Create new logs */
-    newLogs = (Log*)calloc(newNumLog, sizeof(Log));
+    newLogs = (Log*)malloc(newNumLog * sizeof(Log));
+    memset(newLogs, 0, newNumLog * sizeof(Log));
     end = newLogs + newNumLog;
     for (log = newLogs; log != end; log++) {
         log->List = MakeList(HASHLOG_INIT_NUM_ENTRY_PER_LOG, Self);
@@ -1076,7 +1079,7 @@ TxNewThread ()
 {
     PROF_STM_NEWTHREAD_BEGIN();
 
-    Thread* t = (Thread*)malloc(sizeof(Thread));
+    Thread* t = (Thread*)calloc(1, sizeof(Thread));
     assert(t);
 
     PROF_STM_NEWTHREAD_END();
@@ -1144,6 +1147,27 @@ TxInitThread (Thread* t, long id)
     memset(t, 0, sizeof(*t));     /* Default value for most members */
 
     t->UniqID = id;
+    //.........//
+    t->Mode = 0;
+    t->HoldsLocks = 0;
+    t->Retries = 0;
+    t->rv = 0;
+    t->wv = 0;
+    t->abv = 0;
+#ifdef TL2_EAGER
+    t->maxv = NULL;
+#endif /* TL2_EAGER */
+    t->ROFlag = NULL;
+    t->IsRO = 0;
+    t->Starts = 0;
+    t->Aborts = 0;
+    t->xorrng[0] = 0;
+    t->memCache = NULL;
+    t->allocPtr = NULL;
+    t->freePtr = NULL;
+    t->envPtr = NULL;
+    //.........//
+
     t->rng = id + 1;
     t->xorrng[0] = t->rng;
 

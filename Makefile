@@ -9,6 +9,7 @@
 # Variables
 # ==============================================================================
 
+#CFLAGS  := -g3 -Wall -fno-inline -O3
 CFLAGS  := -g -Wall -Winline -O3
 #CFLAGS  += -m32
 #CFLAGS  += -DTL2_OPTIM_HASHLOG

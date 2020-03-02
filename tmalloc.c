@@ -32,7 +32,7 @@
 typedef struct tmalloc_info {
     size_t size;
     char pad[sizeof(long) - sizeof(size_t)];
-} tmalloc_info_t;
+} __attribute__ ((aligned (8))) tmalloc_info_t;
 
 
 /* =============================================================================
@@ -65,10 +65,10 @@ tmalloc_reserve_z (size_t n, size_t size)
         return NULL;
     }
 
-    memset(blockPtr, 0, sizeof(tmalloc_info_t) + size);
+    memset(blockPtr, 0, sizeof(tmalloc_info_t) + size * n);
 
     tmalloc_info_t* infoPtr = BLK2INFO(blockPtr);
-    infoPtr->size = size;
+    infoPtr->size = size * n;
 
     void* dataPtr = BLK2DATA(blockPtr);
 
