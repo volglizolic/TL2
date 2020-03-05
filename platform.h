@@ -22,7 +22,7 @@
  *
  * =============================================================================
  */
-#define CAS(m,c,s)  __sync_val_compare_and_swap((intptr_t*)m, (intptr_t)c, (intptr_t)s)
+#define CAS(m,c,s)  __sync_val_compare_and_swap(m, c, s)
 
 
 /* =============================================================================
@@ -50,12 +50,30 @@ __INLINE__ void prefetchw (volatile void* x){
  * Non-faulting load
  * =============================================================================
  */
-__INLINE__ intptr_t
-LDNF (volatile intptr_t* a)
-{
-    return atomic_load_explicit((long*) a, memory_order_seq_cst);
-}
+#define LDNF(X) _Generic((X), \
+    uint64_t* : LDNF_64, \
+    uint32_t* : LDNF_32, \
+    uint16_t* : LDNF_16, \
+    uint8_t* : LDNF_8, \
+    default  : LDNF_64 \
+)(X)
 
+__INLINE__ intptr_t
+LDNF_64 (uint64_t* a){
+    return atomic_load_explicit(a, memory_order_seq_cst);
+}
+__INLINE__ intptr_t
+LDNF_32 (uint32_t* a) {
+    return atomic_load_explicit(a, memory_order_seq_cst);
+}
+__INLINE__ intptr_t
+LDNF_16 (uint16_t* a){
+    return atomic_load_explicit(a, memory_order_seq_cst);
+}
+__INLINE__ intptr_t
+LDNF_8 (uint8_t* a){
+    return atomic_load_explicit(a, memory_order_seq_cst);
+}
 
 /* =============================================================================
  * MP-polite spinning
