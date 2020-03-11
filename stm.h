@@ -80,7 +80,7 @@ typedef volatile intptr_t               vintp;
 
 #define STM_WRITE(var, val)             TxStore(STM_SELF, \
                                                 (vintp*)(void*)&(var), \
-                                                (intptr_t)(val), \
+                                                (uint64_t)(val), \
                                                 sizeof(var))
 #define STM_WRITE_F(var, val)           TxStore(STM_SELF, \
                                                 (vintp*)FP2IPP(&(var)), \

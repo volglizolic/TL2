@@ -86,9 +86,9 @@ void     TxFreeThread  (Thread*);
 void     TxInitThread  (Thread*, long id);
 int      TxCommit      (Thread*);
 void     TxAbort       (Thread*);
-intptr_t TxLoad        (Thread*, volatile intptr_t*, char);
-void     TxStore       (Thread*, volatile intptr_t*, intptr_t, char);
-void     TxStoreLocal  (Thread*, volatile intptr_t*, intptr_t, char);
+uint64_t TxLoad        (Thread*, volatile intptr_t*, char);
+void     TxStore       (Thread*, volatile intptr_t*, uint64_t, char);
+void     TxStoreLocal  (Thread*, volatile intptr_t*, uint64_t, char);
 void     TxOnce        ();
 void     TxShutdown    ();
 

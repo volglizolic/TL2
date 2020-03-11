@@ -22,7 +22,7 @@ extern "C" {
 
 
 #define DIM(A)                          (sizeof(A)/sizeof((A)[0]))
-#define UNS(a)                          ((uintptr_t)(a))
+#define UNS(a)                          ((uint64_t)(a))
 #define ASSERT(x)                       /* assert(x) */
 #define CTASSERT(x)                     static_assert(x, "") /*({ int a[1-(2*!(x))]; a[0] = 0; })*/
 
@@ -46,11 +46,11 @@ extern "C" {
  * =============================================================================
  */
 static __inline__ float
-intp2float (intptr_t val)
+intp2float (uint64_t val)
 {
 #ifdef __LP64__
     union {
-        intptr_t i;
+        uint64_t i;
         float    f[2];
     } convert;
     convert.i = val;
@@ -70,12 +70,12 @@ intp2float (intptr_t val)
  * float2intp
  * =============================================================================
  */
-static __inline__ intptr_t
+static __inline__ uint64_t
 float2intp (float val)
 {
 #ifdef __LP64__
     union {
-        intptr_t i;
+        uint64_t i;
         float    f[2];
     } convert;
     convert.f[0] = val;
@@ -96,10 +96,10 @@ float2intp (float val)
  * =============================================================================
  */
 static __inline__ float*
-intpp2floatp (intptr_t* val)
+intpp2floatp (uint64_t* val)
 {
     union {
-        intptr_t* i;
+        uint64_t* i;
         float*    f;
     } convert;
     convert.i = val;
@@ -111,11 +111,11 @@ intpp2floatp (intptr_t* val)
  * floatp2intpp
  * =============================================================================
  */
-static __inline__ intptr_t*
+static __inline__ uint64_t*
 floatp2intpp (float* val)
 {
     union {
-        intptr_t* i;
+        uint64_t* i;
         float*    f;
     } convert;
     convert.f = val;
@@ -128,10 +128,10 @@ floatp2intpp (float* val)
  * =============================================================================
  */
 static __inline__ void*
-intp2voidp (intptr_t val)
+intp2voidp (uint64_t val)
 {
     union {
-        intptr_t i;
+        uint64_t i;
         void*    v;
     } convert;
     convert.i = val;
@@ -143,11 +143,11 @@ intp2voidp (intptr_t val)
  * voidp2intp
  * =============================================================================
  */
-static __inline__ intptr_t
+static __inline__ uint64_t
 voidp2intp (void* val)
 {
     union {
-        intptr_t i;
+        uint64_t i;
         void*    v;
     } convert;
     convert.v = val;
@@ -165,7 +165,7 @@ static __inline__ void
 CompileTimeAsserts ()
 {
 #ifdef __LP64__
-    CTASSERT(sizeof(intptr_t) == sizeof(long));
+    CTASSERT(sizeof(uint64_t) == sizeof(long));
     CTASSERT(sizeof(long) == 8);
 #else
     CTASSERT(sizeof(intptr_t) == sizeof(long));
@@ -176,7 +176,7 @@ CompileTimeAsserts ()
      * For type conversions
      */
 #ifdef __LP64__
-    CTASSERT(2*sizeof(float) == sizeof(intptr_t));
+    CTASSERT(2*sizeof(float) == sizeof(uint64_t));
 #else
     CTASSERT(sizeof(float)   == sizeof(intptr_t));
 #endif

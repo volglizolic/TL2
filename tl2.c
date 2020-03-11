@@ -252,21 +252,60 @@ void StoreVariable (volatile intptr_t *address, Valu_t Valu){
     assert(0);
 }
 
+void StoreVariableTyped (volatile intptr_t *address, intptr_t value, char size){
+    if(size == 1){
+        uint8_t* ptr = (uint8_t *) address;
+        *ptr = (uint8_t) value;
+        return;
+    }
+    if(size == 2){
+        uint16_t * ptr = (uint16_t *) address;
+        *ptr = (uint16_t) value;
+        return;
+    }
+    if(size == 4){
+        uint32_t* ptr = (uint32_t *) address;
+        *ptr = (uint32_t) value;
+        return;
+    }
+    if(size == 8){
+        uint64_t* ptr = (uint64_t *) address;
+        *ptr = (uint64_t) value;
+        return;
+    }
+    assert(0);
+}
+
+Valu_t MakeValuBundle(uint64_t value, char size){
+    Valu_t Valu;
+    if(size == 1)
+        Valu.Val.b8[0] = (uint8_t) value;
+    if(size == 2)
+        Valu.Val.b16[0] = (uint16_t) value;
+    if(size == 4)
+        Valu.Val.b32[0] = (uint32_t) value;
+    if(size == 8)
+        Valu.Val.b64 = (uint64_t) value;
+    Valu.size = size;
+    return Valu;
+}
+
 intptr_t LoadVariable (Valu_t Valu){
     if(Valu.size == 1)
-        return (intptr_t) Valu.Val.b8[0];
+        return (uint64_t) Valu.Val.b8[0];
 
     if(Valu.size == 2)
-        return (intptr_t) Valu.Val.b16[0];
+        return (uint64_t) Valu.Val.b16[0];
 
     if(Valu.size == 4)
-        return (intptr_t) Valu.Val.b32[0];
+        return (uint64_t) Valu.Val.b32[0];
 
     if(Valu.size == 8)
-        return (intptr_t) Valu.Val.b64;
+        return (uint64_t) Valu.Val.b64;
     assert(0);
     return 0;
 }
+
 
 /* =============================================================================
  * MarsagliaXORV
@@ -1839,12 +1878,10 @@ TxAbort (Thread* Self)
  */
 #ifdef TL2_EAGER
 void
-TxStore (Thread* Self, volatile intptr_t* addr, intptr_t valu_val, char size)
+TxStore (Thread* Self, volatile intptr_t* addr, uint64_t valu_val, char size)
 {
     PROF_STM_WRITE_BEGIN();
-    Valu_t valu;
-    valu.size = size;
-    valu.Val.b64 = valu_val;
+
     ASSERT(Self->Mode == TTXN);
     if (Self->IsRO) {
         *(Self->ROFlag) = 0;
@@ -1902,33 +1939,31 @@ TxStore (Thread* Self, volatile intptr_t* addr, intptr_t valu_val, char size)
 
 
     Log* wr = &Self->wrSet;
-    Valu_t valu2;
-    valu2.Val.b64 = 0;
-    if(size == 1) valu2.Val.b8[0] = (uint8_t) (*addr);
-    if(size == 2) valu2.Val.b16[0] = (uint16_t) (*addr);
-    if(size == 4) valu2.Val.b32[0] = (uint32_t) (*addr);
-    if(size == 8) valu2.Val.b64 = (uint64_t) (*addr);
-    valu2.size = size;
+    Valu_t valu;
+    valu.Val.b64 = 0;
+    if(size == 1) valu.Val.b8[0] = (uint8_t) (*addr);
+    if(size == 2) valu.Val.b16[0] = (uint16_t) (*addr);
+    if(size == 4) valu.Val.b32[0] = (uint32_t) (*addr);
+    if(size == 8) valu.Val.b64 = (uint64_t) (*addr);
+    valu.size = size;
 
-    AVPair* e = RecordStore(wr, addr, valu2, LockFor, cv);
+    AVPair* e = RecordStore(wr, addr, valu, LockFor, cv);
     if (cv > Self->maxv) {
         Self->maxv = cv;
     }
 
     *LockFor = UNS(e) | UNS(LOCKBIT);
 
-    StoreVariable(addr, valu);
+    StoreVariableTyped(addr, valu_val, size);
 
     PROF_STM_WRITE_END();
 }
 #else /* !TL2_EAGER */
 void
-TxStore (Thread* Self, volatile intptr_t* addr, intptr_t valu_val, char size)
+TxStore (Thread* Self, volatile intptr_t* addr, uint64_t valu_val, char size)
 {
     PROF_STM_WRITE_BEGIN();
-    Valu_t valu;
-    valu.size = size;
-    valu.Val.b64 = valu_val;
+    Valu_t valu = MakeValuBundle(valu_val, size);
     volatile vwLock* LockFor;
     vwLock rdv;
 
@@ -2001,7 +2036,7 @@ TxStore (Thread* Self, volatile intptr_t* addr, intptr_t valu_val, char size)
      * This is entirely optional
      */
     MEMBARLDLD();
-    intptr_t temp = 0;
+    uint64_t temp = 0;
     if(size == 1)
         temp = LDNF((uint8_t*)addr);
     if(size == 2)
@@ -2063,7 +2098,7 @@ TxStore (Thread* Self, volatile intptr_t* addr, intptr_t valu_val, char size)
  * =============================================================================
  */
 #ifdef TL2_EAGER
-intptr_t
+uint64_t
 TxLoad (Thread* Self, volatile intptr_t* Addr, char size)
 {
     PROF_STM_READ_BEGIN();
@@ -2120,12 +2155,12 @@ TxLoad (Thread* Self, volatile intptr_t* Addr, char size)
     return 0;
 }
 #else /* !TL2_EAGER */
-intptr_t
+uint64_t
 TxLoad (Thread* Self, volatile intptr_t* Addr, char size)
 {
     PROF_STM_READ_BEGIN();
 
-    intptr_t Valu = 0;
+    uint64_t Valu = 0;
 
 #  ifdef TL2_STATS
     Self->TxLD++;
@@ -2250,21 +2285,20 @@ txSterilize (void* Base, size_t Length)
  * =============================================================================
  */
 void
-TxStoreLocal (Thread* Self, volatile intptr_t* Addr, intptr_t Valu, char size)
+TxStoreLocal (Thread* Self, volatile intptr_t* Addr, uint64_t valu_val, char size)
 {
     PROF_STM_WRITELOCAL_BEGIN();
-    Valu_t valu;
-    valu.Val.b64 = 0;
-    if(size == 1) valu.Val.b8[0] = (uint8_t) (*Addr);
-    if(size == 2) valu.Val.b16[0] = (uint16_t) (*Addr);
-    if(size == 4) valu.Val.b32[0] = (uint32_t) (*Addr);
-    if(size == 8) valu.Val.b64 = (uint64_t) (*Addr);
-    valu.size = size;
+    Valu_t Valu;
+    Valu.Val.b64 = 0;
+    if(size == 1) Valu.Val.b8[0] = (uint8_t) (*Addr);
+    if(size == 2) Valu.Val.b16[0] = (uint16_t) (*Addr);
+    if(size == 4) Valu.Val.b32[0] = (uint32_t) (*Addr);
+    if(size == 8) Valu.Val.b64 = (uint64_t) (*Addr);
+    Valu.size = size;
 
-    SaveForRollBack(&Self->LocalUndo, Addr, valu);
+    SaveForRollBack(&Self->LocalUndo, Addr, Valu);
 
-    valu.Val.b64 = Valu;
-    StoreVariable(Addr, valu);
+    StoreVariableTyped(Addr, valu_val, size);
 
     PROF_STM_WRITELOCAL_END();
 }
