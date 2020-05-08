@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.15)
 project(TL2)
 
 set(CMAKE_C_STANDARD 11)
-set(GCC_COVERAGE_COMPILE_FLAGS "-pthread -g")
+set(GCC_COVERAGE_COMPILE_FLAGS "-pthread -g -O3")
 set(TL2_COMPILE_FLAGS "")
 set(TL2_COMPILE_FLAGS "-DTL2_EAGER")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${TL2_COMPILE_FLAGS}")

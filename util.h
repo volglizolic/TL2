@@ -46,14 +46,14 @@ extern "C" {
  * =============================================================================
  */
 static __inline__ float
-intp2float (uint64_t val)
+intp2float (uint32_t val)
 {
 #ifdef __LP64__
     union {
-        uint64_t i;
+        uint32_t i[2];
         float    f[2];
     } convert;
-    convert.i = val;
+    convert.i[0] = val;
     return convert.f[0];
 #else
     union {
@@ -70,16 +70,16 @@ intp2float (uint64_t val)
  * float2intp
  * =============================================================================
  */
-static __inline__ uint64_t
+static __inline__ uint32_t
 float2intp (float val)
 {
 #ifdef __LP64__
     union {
-        uint64_t i;
+        uint32_t i[2];
         float    f[2];
     } convert;
     convert.f[0] = val;
-    return convert.i;
+    return convert.i[0];
 #else
     union {
         intptr_t i;
@@ -96,10 +96,10 @@ float2intp (float val)
  * =============================================================================
  */
 static __inline__ float*
-intpp2floatp (uint64_t* val)
+intpp2floatp (uint32_t* val)
 {
     union {
-        uint64_t* i;
+        uint32_t* i;
         float*    f;
     } convert;
     convert.i = val;
@@ -111,11 +111,11 @@ intpp2floatp (uint64_t* val)
  * floatp2intpp
  * =============================================================================
  */
-static __inline__ uint64_t*
+static __inline__ uint32_t*
 floatp2intpp (float* val)
 {
     union {
-        uint64_t* i;
+        uint32_t* i;
         float*    f;
     } convert;
     convert.f = val;

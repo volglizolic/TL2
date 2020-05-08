@@ -58,21 +58,50 @@ __INLINE__ void prefetchw (volatile void* x){
     default  : LDNF_64 \
 )(X)
 
-__INLINE__ intptr_t
+__INLINE__ uint64_t
 LDNF_64 (uint64_t* a){
     return atomic_load_explicit(a, memory_order_seq_cst);
 }
-__INLINE__ intptr_t
+__INLINE__ uint32_t
 LDNF_32 (uint32_t* a) {
     return atomic_load_explicit(a, memory_order_seq_cst);
 }
-__INLINE__ intptr_t
+__INLINE__ uint16_t
 LDNF_16 (uint16_t* a){
     return atomic_load_explicit(a, memory_order_seq_cst);
 }
-__INLINE__ intptr_t
+__INLINE__ uint8_t
 LDNF_8 (uint8_t* a){
     return atomic_load_explicit(a, memory_order_seq_cst);
+}
+
+/* =============================================================================
+ * Non-faulting store
+ * =============================================================================
+ */
+#define STNF(X, VAL) _Generic((X), \
+    uint64_t* : STNF_64, \
+    uint32_t* : STNF_32, \
+    uint16_t* : STNF_16, \
+    uint8_t* : STNF_8, \
+    default  : STNF_64 \
+)(X, VAL)
+
+__INLINE__ void
+STNF_64 (uint64_t* a, uint64_t val){
+    atomic_store_explicit(a, val, memory_order_seq_cst);
+}
+__INLINE__ void
+STNF_32 (uint32_t* a, uint32_t val) {
+    atomic_store_explicit(a, val, memory_order_seq_cst);
+}
+__INLINE__ void
+STNF_16 (uint16_t* a, uint16_t val){
+    atomic_store_explicit(a, val, memory_order_seq_cst);
+}
+__INLINE__ void
+STNF_8 (uint8_t* a, uint8_t val){
+    atomic_store_explicit(a, val, memory_order_seq_cst);
 }
 
 /* =============================================================================

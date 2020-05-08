@@ -20,6 +20,9 @@
 #include "tl2.h"
 #include "util.h"
 
+
+#define STM_RETRYING_DECL               int Tx_retries
+#define STM_RETRYING_VAR                Tx_retries
 #define STM_THREAD_T                    Thread
 #define STM_SELF                        Self
 #define STM_RO_FLAG                     ROFlag
@@ -43,7 +46,7 @@
 #define STM_VALID()                     (1)
 #define STM_RESTART()                   TxAbort(STM_SELF)
 
-#define STM_STARTUP()                   TxOnce()
+#define STM_STARTUP(...)                   TxOnce()
 #define STM_SHUTDOWN()                  TxShutdown()
 
 #define STM_NEW_THREAD()                TxNewThread()
@@ -57,10 +60,11 @@
 
 
 
-#  define STM_BEGIN(isReadOnly)         do { \
+#  define STM_BEGIN(isReadOnly)         STM_RETRYING_DECL = 0; \
+                                        do { \
                                             STM_JMPBUF_T STM_JMPBUF; \
                                             int STM_RO_FLAG = isReadOnly; \
-                                            sigsetjmp(STM_JMPBUF, 1); \
+                                            STM_RETRYING_VAR = sigsetjmp(STM_JMPBUF, 1); \
                                             TxStart(STM_SELF, &STM_JMPBUF, &STM_RO_FLAG); \
                                         } while (0) /* enforce comma */
 
@@ -70,15 +74,15 @@
 
 typedef volatile intptr_t               vintp;
 
-#define STM_READ(var)                   TxLoad(STM_SELF, (vintp*)(void*)&(var), sizeof(var))
+#define STM_READ(var, ...)                   TxLoad(STM_SELF, (vintp*)(void*)&(var), sizeof(var))
 #define STM_READ_F(var)                 IP2F(TxLoad(STM_SELF, \
                                                     (vintp*)FP2IPP(&(var)), \
                                                     sizeof(var)))
 #define STM_READ_P(var)                 IP2VP(TxLoad(STM_SELF, \
                                                      (vintp*)(void*)&(var), \
-                                                     sizeof(var)))
+                                                     sizeof(uint64_t)))
 
-#define STM_WRITE(var, val)             TxStore(STM_SELF, \
+#define STM_WRITE(var, val, ...)             TxStore(STM_SELF, \
                                                 (vintp*)(void*)&(var), \
                                                 (uint64_t)(val), \
                                                 sizeof(var))
@@ -89,7 +93,7 @@ typedef volatile intptr_t               vintp;
 #define STM_WRITE_P(var, val)           TxStore(STM_SELF, \
                                                 (vintp*)(void*)&(var), \
                                                 VP2IP(val), \
-                                                sizeof(var))
+                                                sizeof(uint64_t))
 
 #define STM_LOCAL_WRITE(var, val)       ({var = val; var;})
 #define STM_LOCAL_WRITE_F(var, val)     ({var = val; var;})

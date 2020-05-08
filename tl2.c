@@ -231,22 +231,22 @@ static struct sigaction global_act_oldsigsegv;
 void StoreVariable (volatile intptr_t *address, Valu_t Valu){
     if(Valu.size == 1){
         uint8_t* ptr = (uint8_t *) address;
-        *ptr = Valu.Val.b8[0];
+        STNF(ptr, (uint8_t)Valu.Val.b8[0]);
         return;
     }
     if(Valu.size == 2){
         uint16_t * ptr = (uint16_t *) address;
-        *ptr = Valu.Val.b16[0];
+        STNF(ptr, (uint16_t)Valu.Val.b16[0]);
         return;
     }
     if(Valu.size == 4){
         uint32_t* ptr = (uint32_t *) address;
-        *ptr = Valu.Val.b32[0];
+        STNF(ptr, (uint32_t)Valu.Val.b32[0]);
         return;
     }
     if(Valu.size == 8){
         uint64_t* ptr = (uint64_t *) address;
-        *ptr = Valu.Val.b64;
+        STNF(ptr, (uint64_t)Valu.Val.b64);
         return;
     }
     assert(0);
@@ -255,22 +255,22 @@ void StoreVariable (volatile intptr_t *address, Valu_t Valu){
 void StoreVariableTyped (volatile intptr_t *address, intptr_t value, char size){
     if(size == 1){
         uint8_t* ptr = (uint8_t *) address;
-        *ptr = (uint8_t) value;
+        STNF(ptr, (uint8_t)value);
         return;
     }
     if(size == 2){
         uint16_t * ptr = (uint16_t *) address;
-        *ptr = (uint16_t) value;
+        STNF(ptr, (uint16_t)value);
         return;
     }
     if(size == 4){
         uint32_t* ptr = (uint32_t *) address;
-        *ptr = (uint32_t) value;
+        STNF(ptr, (uint32_t)value);
         return;
     }
     if(size == 8){
         uint64_t* ptr = (uint64_t *) address;
-        *ptr = (uint64_t) value;
+        STNF(ptr, (uint64_t)value);
         return;
     }
     assert(0);
@@ -1143,9 +1143,9 @@ void
 TxShutdown ()
 {
     printf("TL2 system shutdown:\n"
-           "  GCLOCK=0x%lX Starts=%li Aborts=%li\n"
+           "  GCLOCK=0x%lX Starts=%li Aborts=%li Commits=%li\n"
            "  Overflows: R=%li W=%li L=%li\n",
-           (unsigned long)_GCLOCK, StartTally, AbortTally,
+           (unsigned long)_GCLOCK, StartTally, AbortTally, StartTally - AbortTally,
            ReadOverflowTally, WriteOverflowTally, LocalOverflowTally);
 
 #ifdef TL2_STATS
@@ -2103,7 +2103,7 @@ TxLoad (Thread* Self, volatile intptr_t* Addr, char size)
 {
     PROF_STM_READ_BEGIN();
 
-    intptr_t Valu = 0;
+    uint64_t Valu = 0;
 
 #  ifdef TL2_STATS
     Self->TxLD++;
@@ -2115,16 +2115,7 @@ TxLoad (Thread* Self, volatile intptr_t* Addr, char size)
     volatile vwLock* LockFor = PSLOCK(Addr);
     vwLock cv = LDLOCK(LockFor);
     vwLock rdv = cv & ~LOCKBIT;
-    MEMBARLDLD();
-    if(size == 1)
-        Valu = LDNF((uint8_t*)Addr);
-    if(size == 2)
-        Valu = LDNF((uint16_t*)Addr);
-    if(size == 4)
-        Valu = LDNF((uint32_t*)Addr);
-    if(size == 8)
-        Valu = LDNF((uint64_t*)Addr);
-    MEMBARLDLD();
+
     if ((rdv <= Self->rv && LDLOCK(LockFor) == rdv) ||
         ((cv & LOCKBIT) && (((AVPair*)rdv)->Owner == Self)))
     {
@@ -2134,6 +2125,16 @@ TxLoad (Thread* Self, volatile intptr_t* Addr, char size)
                 TxAbort(Self);
             }
         }
+        MEMBARLDLD();
+        if(size == 1)
+            Valu = LDNF((uint8_t*)Addr);
+        if(size == 2)
+            Valu = LDNF((uint16_t*)Addr);
+        if(size == 4)
+            Valu = LDNF((uint32_t*)Addr);
+        if(size == 8)
+            Valu = LDNF((uint64_t*)Addr);
+        MEMBARLDLD();
         PROF_STM_READ_END();
         return Valu;
     }
@@ -2441,7 +2442,7 @@ TxFree (Thread* Self, void* ptr)
      * TODO: record in separate log to avoid making the write set large
      */
 #  ifdef TL2_EAGER
-    TxStore(Self, (volatile intptr_t*)ptr, 0, 8);
+    TxStore(Self, (volatile intptr_t*)ptr, 0, 1);
 #  else /* !TL2_EAGER */
     volatile vwLock* LockFor = PSLOCK(ptr);
 #    ifdef TL2_OPTIM_HASHLOG
@@ -2454,7 +2455,7 @@ TxFree (Thread* Self, void* ptr)
 #    endif /* !TL2_OPTIM_HASHLOG */
     Valu_t valu;
     valu.Val.b64 = 0;
-    valu.size = 8;
+    valu.size = 1;
     RecordStore(wr, (volatile intptr_t*)ptr, valu, LockFor);
 #  endif /* !TL2_EAGER */
 }
