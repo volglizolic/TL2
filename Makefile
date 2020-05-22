@@ -16,7 +16,7 @@ CFLAGS += -static
 #CFLAGS  += -DTL2_OPTIM_HASHLOG
 #CFLAGS  += -DTL2_RESIZE_HASHLOG
 
-LIBTL2 := libtl2.a
+LIBTL2 := libTL2_riscv.a
 
 SRCS := \
 	tl2.c \
@@ -24,8 +24,9 @@ SRCS := \
 #
 OBJS := ${SRCS:.c=.o}
 
-AR      := ar
-RANLIB  := ranlib
+CC		= riscv64-unknown-linux-gnu-gcc
+AR      = riscv64-unknown-linux-gnu-ar
+RANLIB  = riscv64-unknown-linux-gnu-ranlib
 
 RM := rm -f
 

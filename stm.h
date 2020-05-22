@@ -58,13 +58,18 @@
 
 
 
-
-
-#  define STM_BEGIN(isReadOnly)         STM_RETRYING_DECL = 0; \
+#  define STM_BEGIN_PERS()              STM_RETRYING_DECL; \
                                         do { \
                                             STM_JMPBUF_T STM_JMPBUF; \
-                                            int STM_RO_FLAG = isReadOnly; \
+                                            int STM_RO_FLAG = 0; \
                                             STM_RETRYING_VAR = sigsetjmp(STM_JMPBUF, 1); \
+                                            TxStart(STM_SELF, &STM_JMPBUF, &STM_RO_FLAG); \
+                                        } while (0) /* enforce comma */
+
+#  define STM_BEGIN(isReadOnly)         do { \
+                                            STM_JMPBUF_T STM_JMPBUF; \
+                                            int STM_RO_FLAG = isReadOnly; \
+                                            sigsetjmp(STM_JMPBUF, 1); \
                                             TxStart(STM_SELF, &STM_JMPBUF, &STM_RO_FLAG); \
                                         } while (0) /* enforce comma */
 
@@ -74,23 +79,23 @@
 
 typedef volatile intptr_t               vintp;
 
-#define STM_READ(var, ...)                   TxLoad(STM_SELF, (vintp*)(void*)&(var), sizeof(var))
-#define STM_READ_F(var)                 IP2F(TxLoad(STM_SELF, \
+#define STM_READ(var, offset)                   TxLoad(STM_SELF, (vintp*)(void*)&(var), sizeof(var))
+#define STM_READ_F(var, offset)                 IP2F(TxLoad(STM_SELF, \
                                                     (vintp*)FP2IPP(&(var)), \
                                                     sizeof(var)))
-#define STM_READ_P(var)                 IP2VP(TxLoad(STM_SELF, \
+#define STM_READ_P(var, offset)                 IP2VP(TxLoad(STM_SELF, \
                                                      (vintp*)(void*)&(var), \
                                                      sizeof(uint64_t)))
 
-#define STM_WRITE(var, val, ...)             TxStore(STM_SELF, \
+#define STM_WRITE(var, val, offset)             TxStore(STM_SELF, \
                                                 (vintp*)(void*)&(var), \
                                                 (uint64_t)(val), \
                                                 sizeof(var))
-#define STM_WRITE_F(var, val)           TxStore(STM_SELF, \
+#define STM_WRITE_F(var, val, offset)           TxStore(STM_SELF, \
                                                 (vintp*)FP2IPP(&(var)), \
                                                 F2IP(val), \
                                                 sizeof(var))
-#define STM_WRITE_P(var, val)           TxStore(STM_SELF, \
+#define STM_WRITE_P(var, val, offset)           TxStore(STM_SELF, \
                                                 (vintp*)(void*)&(var), \
                                                 VP2IP(val), \
                                                 sizeof(uint64_t))
